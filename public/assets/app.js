@@ -12,7 +12,29 @@ document.addEventListener("submit", function (event) {
   event.preventDefault();
 
   var task = form.closest(".task");
-  var completed = task.classList.toggle("task-completed");
+  renderTaskCompleted(task, form, !task.classList.contains("task-completed"));
+
+  // El formulario incluye _method=PUT y authenticity_token: se envía tal cual
+  // para que el servidor reciba lo mismo que en un envío sin JavaScript.
+  fetch(form.action, {
+    method: "POST",
+    body: new URLSearchParams(new FormData(form)),
+    credentials: "same-origin",
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+    })
+    .catch(function () {
+      // Si no se ha guardado, el envío normal muestra el estado real.
+      form.submit();
+    });
+});
+
+// Refleja en la interfaz si la tarea está completada.
+function renderTaskCompleted(task, form, completed) {
+  task.classList.toggle("task-completed", completed);
   var button = form.querySelector("button");
   var status = task.querySelector(".task-status");
 
@@ -30,6 +52,4 @@ document.addEventListener("submit", function (event) {
   } else if (!completed && status) {
     status.remove();
   }
-
-  fetch(form.action);
-});
+}

@@ -78,6 +78,38 @@ func (as *ActionSuite) Test_TasksToggle_CompletesAndReopens() {
 	as.False(task.Completed)
 }
 
+func (as *ActionSuite) Test_TasksIndex_ToggleFormSendsPut() {
+	task := &models.Task{Title: "Tarea con toggle"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	// app.js envía este formulario tal cual: depende de estos campos.
+	body := res.Body.String()
+	start := strings.Index(body, "data-task-toggle")
+	as.NotEqual(-1, start)
+	form := body[start:]
+	form = form[:strings.Index(form, "</form>")]
+	as.Contains(form, `name="_method" value="PUT"`)
+	as.Contains(form, `name="authenticity_token"`)
+}
+
+func (as *ActionSuite) Test_TasksToggle_GetDoesNotChangeState() {
+	task := &models.Task{Title: "Pendiente de completar"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s/toggle", task.ID).Get()
+	as.Equal(404, res.Code)
+
+	as.NoError(as.DB.Reload(task))
+	as.False(task.Completed)
+}
+
 func (as *ActionSuite) Test_TasksToggle_NotFound() {
 	id := uuid.Must(uuid.NewV4())
 	res := as.HTML("/tasks/%s/toggle", id).Put(url.Values{})
