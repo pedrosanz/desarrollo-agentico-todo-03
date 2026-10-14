@@ -71,7 +71,7 @@
       autocomplete="off"
       <%= if (len(errors.Get("title")) > 0) { %>autofocus aria-invalid="true" aria-describedby="title-error"<% } %>
     >
-    <%= partial("tasks/priority_select.plush.html") %>
+    <%= partial("priority_select.plush.html") %>
     <button type="submit" class="button button-primary">Añadir</button>
   </div>
   <%= if (len(errors.Get("title")) > 0) { %>
