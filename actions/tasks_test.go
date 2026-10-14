@@ -3,6 +3,7 @@ package actions
 import (
 	"net/url"
 	"strings"
+	"time"
 
 	"todo/models"
 
@@ -370,4 +371,18 @@ func (as *ActionSuite) Test_TasksUpdate_InvalidPriority() {
 	as.NoError(as.DB.Reload(task))
 	as.Equal("Título original", task.Title)
 	as.Equal(models.PriorityHigh, task.Priority)
+}
+
+func (as *ActionSuite) Test_TasksIndex_ShowsCreationDate() {
+	task := &models.Task{Title: "Tarea con fecha"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	createdAt := time.Date(2026, time.March, 5, 10, 30, 0, 0, time.UTC)
+	as.NoError(as.DB.RawQuery("UPDATE tasks SET created_at = ? WHERE id = ?", createdAt, task.ID).Exec())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), `<time class="task-created" datetime="2026-03-05">Creada el 05/03/2026</time>`)
 }
