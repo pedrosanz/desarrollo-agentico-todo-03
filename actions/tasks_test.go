@@ -313,6 +313,7 @@ func (as *ActionSuite) Test_TasksCreate_InvalidPriority() {
 	res := as.HTML("/tasks").Post(url.Values{"title": {"Tarea"}, "priority": {"urgente"}})
 	as.Equal(422, res.Code)
 	as.Contains(res.Body.String(), "La prioridad no es válida.")
+	as.Contains(res.Body.String(), `<option value="medium" selected>Media</option>`)
 
 	count, err := as.DB.Count(&models.Task{})
 	as.NoError(err)
@@ -364,6 +365,7 @@ func (as *ActionSuite) Test_TasksUpdate_InvalidPriority() {
 	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"Nuevo título"}, "priority": {"urgente"}})
 	as.Equal(422, res.Code)
 	as.Contains(res.Body.String(), "La prioridad no es válida.")
+	as.Contains(res.Body.String(), `<option value="high" selected>Alta</option>`)
 	as.NotContains(res.Body.String(), `aria-describedby="title-error"`)
 	as.NoError(as.DB.Reload(task))
 	as.Equal("Título original", task.Title)

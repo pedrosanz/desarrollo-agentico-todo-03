@@ -47,6 +47,11 @@ func TasksCreate(c buffalo.Context) error {
 			return err
 		}
 
+		// Una prioridad no válida no tiene opción en el selector: se muestra la de por defecto.
+		if len(verrs.Get("priority")) > 0 {
+			task.Priority = models.PriorityMedium
+		}
+
 		c.Set("tasks", tasks)
 		c.Set("task", task)
 		c.Set("errors", verrs)
@@ -88,6 +93,7 @@ func TasksUpdate(c buffalo.Context) error {
 		return err
 	}
 	task.Title = strings.TrimSpace(input.Title)
+	currentPriority := task.Priority
 	if input.Priority != "" {
 		task.Priority = input.Priority
 	}
@@ -97,6 +103,10 @@ func TasksUpdate(c buffalo.Context) error {
 		return err
 	}
 	if verrs.HasAny() {
+		// Una prioridad no válida no tiene opción en el selector: se muestra la actual.
+		if len(verrs.Get("priority")) > 0 {
+			task.Priority = currentPriority
+		}
 		c.Set("task", task)
 		c.Set("errors", verrs)
 		return c.Render(http.StatusUnprocessableEntity, r.HTML("tasks/edit.plush.html"))
