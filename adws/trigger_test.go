@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +20,121 @@ const (
 	oldIssue      = "https://github.com/example/todo/issues/3"
 	defaultConfig = "repo: example/todo\nlabel: adw\ninterval_seconds: 20\nprompt: /adw {{issue_url}}\n"
 )
+
+// fakeTools sustituye a gh, claude y sleep. El binario de test se copia con
+// esos nombres en un directorio que se antepone al PATH; así funciona también
+// en Windows, donde exec.LookPath solo encuentra ejecutables con extensión.
+var fakeTools = map[string]func(args []string) int{
+	"gh": func(args []string) int {
+		root := os.Getenv("TEST_ROOT")
+		writeTestFile(filepath.Join(root, "gh-args"), strings.Join(args, "\n")+"\n")
+		if code := envExitCode("TEST_GH_EXIT"); code != 0 {
+			return code
+		}
+		issues, err := os.ReadFile(filepath.Join(root, "issues"))
+		if err != nil {
+			return 92
+		}
+		os.Stdout.Write(issues)
+		return 0
+	},
+	"claude": func(args []string) int {
+		if len(args) != 2 || args[0] != "-p" {
+			return 90
+		}
+		if n, _ := os.Stdin.Read(make([]byte, 1)); n > 0 {
+			return 91
+		}
+		root := os.Getenv("TEST_ROOT")
+		appendEvent("START:" + args[1])
+		cwd, err := os.Getwd()
+		if err != nil {
+			return 93
+		}
+		writeTestFile(filepath.Join(root, "cwd"), cwd)
+		if code := envExitCode("TEST_CLAUDE_EXIT"); code != 0 {
+			return code
+		}
+		time.Sleep(20 * time.Millisecond)
+		appendEvent("END:" + args[1])
+		return 0
+	},
+	"sleep": func(args []string) int {
+		appendEvent("SLEEP:" + args[0])
+		slept := filepath.Join(os.Getenv("TEST_ROOT"), "slept")
+		if _, err := os.Stat(slept); err == nil {
+			return 73
+		}
+		writeTestFile(slept, "")
+		return 0
+	},
+}
+
+func TestMain(m *testing.M) {
+	name := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
+	if fake, ok := fakeTools[name]; ok {
+		os.Exit(fake(os.Args[1:]))
+	}
+	os.Exit(m.Run())
+}
+
+func envExitCode(name string) int {
+	code, _ := strconv.Atoi(os.Getenv(name))
+	return code
+}
+
+func writeTestFile(path, body string) {
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		os.Exit(94)
+	}
+}
+
+func appendEvent(event string) {
+	file, err := os.OpenFile(filepath.Join(os.Getenv("TEST_ROOT"), "events"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		os.Exit(95)
+	}
+	defer file.Close()
+	fmt.Fprintln(file, event)
+}
+
+// installFakeTools copia el binario de test en dir con el nombre de cada herramienta falsa.
+func installFakeTools(t *testing.T, dir string) {
+	t.Helper()
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name := range fakeTools {
+		if runtime.GOOS == "windows" {
+			name += ".exe"
+		}
+		target := filepath.Join(dir, name)
+		if err := os.Link(self, target); err == nil {
+			continue
+		}
+		if err := copyExecutable(self, target); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func copyExecutable(source, target string) error {
+	in, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o700)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		return err
+	}
+	return out.Close()
+}
 
 func TestTriggerHelperProcess(t *testing.T) {
 	if os.Getenv("TEST_TRIGGER_HELPER") != "1" {
@@ -52,28 +170,7 @@ func runTrigger(t *testing.T, issues, configBody string, env []string, args ...s
 	}
 	write("adw.yml", configBody)
 	write("issues", issues)
-	write("gh", `#!/usr/bin/env bash
-set -euo pipefail
-printf '%s\n' "$@" > "$TEST_ROOT/gh-args"
-[[ "${TEST_GH_EXIT:-0}" == 0 ]] || exit "$TEST_GH_EXIT"
-cat "$TEST_ROOT/issues"
-`)
-	write("claude", `#!/usr/bin/env bash
-set -euo pipefail
-[[ $# == 2 && "$1" == -p ]] || exit 90
-if IFS= read -r unexpected; then exit 91; fi
-printf 'START:%s\n' "$2" >> "$TEST_ROOT/events"
-printf '%s' "$PWD" > "$TEST_ROOT/cwd"
-[[ "${TEST_CLAUDE_EXIT:-0}" == 0 ]] || exit "$TEST_CLAUDE_EXIT"
-/bin/sleep 0.02
-printf 'END:%s\n' "$2" >> "$TEST_ROOT/events"
-`)
-	write("sleep", `#!/usr/bin/env bash
-set -euo pipefail
-printf 'SLEEP:%s\n' "$1" >> "$TEST_ROOT/events"
-if [[ -f "$TEST_ROOT/slept" ]]; then exit 73; fi
-touch "$TEST_ROOT/slept"
-`)
+	installFakeTools(t, root)
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	childArgs := []string{"-test.run=^TestTriggerHelperProcess$", "--", "--config", filepath.Join(root, "adw.yml")}
