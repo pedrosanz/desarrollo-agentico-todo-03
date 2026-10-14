@@ -121,7 +121,7 @@ h1 {
 
 .task {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
   align-items: start;
   column-gap: 0.3rem;
   min-height: 61px;
@@ -181,6 +181,34 @@ h1 {
 
 .task-toggle-button:hover .completion-icon svg {
   opacity: 1;
+}
+
+.task-priority {
+  align-self: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  color: #4d4d48;
+  background: #f0f0ec;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.task-priority-high {
+  color: var(--color-primary-hover);
+  background: #fbe9e4;
+}
+
+.task-priority-low {
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+}
+
+.task-completed .task-priority {
+  color: var(--color-muted);
+  background: transparent;
 }
 
 .task-completed .task-title {
@@ -245,7 +273,8 @@ h1 {
   line-height: 1;
 }
 
-input[type="text"] {
+input[type="text"],
+select {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -261,11 +290,17 @@ input[type="text"] {
   flex: 1;
 }
 
+.new-task-row select {
+  width: auto;
+  flex-shrink: 0;
+}
+
 input::placeholder {
   color: var(--color-muted);
 }
 
-input[aria-invalid="true"] {
+input[aria-invalid="true"],
+select[aria-invalid="true"] {
   border-color: var(--color-danger);
   background: #fff9f7;
 }
@@ -307,7 +342,8 @@ input[aria-invalid="true"] {
 
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
@@ -369,6 +405,10 @@ input:focus-visible {
   font-weight: 600;
 }
 
+.edit-task .priority-label {
+  margin-top: 1.25rem;
+}
+
 .edit-task-actions {
   display: flex;
   flex-wrap: wrap;
@@ -380,7 +420,8 @@ input:focus-visible {
 }
 
 .sr-only,
-.task-status {
+.task-status,
+.new-task .priority-label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -434,7 +475,7 @@ input:focus-visible {
   }
 
   .task {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 36px minmax(0, 1fr) auto auto;
   }
 
   .task-toggle-button,
