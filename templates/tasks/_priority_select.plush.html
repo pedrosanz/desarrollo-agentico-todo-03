@@ -1,0 +1,15 @@
+<label for="task-priority" class="priority-label">Prioridad</label>
+<select
+  id="task-priority"
+  name="priority"
+  <%= if (len(errors.Get("priority")) > 0) { %>aria-invalid="true" aria-describedby="priority-error"<% } %>
+>
+  <%= for (opt) in priorityOptions() { %>
+    <option value="<%= opt.Value %>"<%= if (task.Priority == opt.Value) { %> selected<% } %>><%= opt.Label %></option>
+  <% } %>
+</select>
+<%= if (len(errors.Get("priority")) > 0) { %>
+  <p id="priority-error" class="field-error" role="alert">
+    <%= for (msg) in errors.Get("priority") { %><%= msg %><% } %>
+  </p>
+<% } %>

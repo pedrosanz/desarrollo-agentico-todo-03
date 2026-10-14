@@ -15,14 +15,15 @@
     maxlength="200"
     autocomplete="off"
     autofocus
-    <%= if (errors.HasAny()) { %>aria-invalid="true" aria-describedby="title-error"<% } else { %>aria-describedby="title-help"<% } %>
+    <%= if (len(errors.Get("title")) > 0) { %>aria-invalid="true" aria-describedby="title-error"<% } else { %>aria-describedby="title-help"<% } %>
   >
-  <p id="title-help" class="field-hint">Hasta 200 caracteres. Los demás datos de la tarea no cambian.</p>
-  <%= if (errors.HasAny()) { %>
+  <p id="title-help" class="field-hint">Hasta 200 caracteres.</p>
+  <%= if (len(errors.Get("title")) > 0) { %>
     <p id="title-error" class="field-error" role="alert">
       <%= for (msg) in errors.Get("title") { %><%= msg %><% } %>
     </p>
   <% } %>
+  <%= partial("tasks/priority_select.plush.html") %>
   <div class="edit-task-actions">
     <a href="/" class="button">Cancelar</a>
     <button type="submit" class="button button-primary">Guardar cambios</button>

@@ -7,6 +7,7 @@ name = "tres tareas"
     [[scenario.table.row]]
       id = "<%= uuid() %>"
       title = "Comprar material de oficina"
+      priority = "high"
       completed = false
       created_at = "<%= now() %>"
       updated_at = "<%= now() %>"
@@ -14,6 +15,7 @@ name = "tres tareas"
     [[scenario.table.row]]
       id = "<%= uuid() %>"
       title = "Llamar al gestor"
+      priority = "medium"
       completed = false
       created_at = "<%= now() %>"
       updated_at = "<%= now() %>"
@@ -21,6 +23,7 @@ name = "tres tareas"
     [[scenario.table.row]]
       id = "<%= uuid() %>"
       title = "Publicar la oferta de empleo"
+      priority = "low"
       completed = true
       created_at = "<%= now() %>"
       updated_at = "<%= now() %>"

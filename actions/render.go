@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"todo/models"
 	"todo/public"
 	"todo/templates"
 
@@ -22,6 +23,7 @@ func init() {
 
 		// Add template helpers here:
 		Helpers: render.Helpers{
+			"priorityOptions": models.PriorityOptions,
 			// for non-bootstrap form helpers uncomment the lines
 			// below and import "github.com/gobuffalo/helpers/forms"
 			// forms.FormKey:     forms.Form,

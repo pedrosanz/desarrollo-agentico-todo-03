@@ -21,7 +21,7 @@ func TasksIndex(c buffalo.Context) error {
 	}
 
 	c.Set("tasks", tasks)
-	c.Set("task", &models.Task{})
+	c.Set("task", &models.Task{Priority: models.PriorityMedium})
 	c.Set("errors", validate.NewErrors())
 	return c.Render(http.StatusOK, r.HTML("tasks/index.plush.html"))
 }
@@ -71,7 +71,7 @@ func TasksEdit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.HTML("tasks/edit.plush.html"))
 }
 
-// TasksUpdate actualiza solo el título, conservando los demás datos de la tarea.
+// TasksUpdate actualiza el título y la prioridad, conservando los demás datos de la tarea.
 func TasksUpdate(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
 
@@ -81,12 +81,16 @@ func TasksUpdate(c buffalo.Context) error {
 	}
 
 	input := struct {
-		Title string `form:"title" json:"title"`
+		Title    string `form:"title" json:"title"`
+		Priority string `form:"priority" json:"priority"`
 	}{}
 	if err := c.Bind(&input); err != nil {
 		return err
 	}
 	task.Title = strings.TrimSpace(input.Title)
+	if input.Priority != "" {
+		task.Priority = input.Priority
+	}
 
 	verrs, err := tx.ValidateAndUpdate(task)
 	if err != nil {
