@@ -95,3 +95,14 @@ func (t Task) PriorityLabel() string {
 	}
 	return t.Priority
 }
+
+// CreatedDateLabel devuelve la fecha de creación en formato dd/mm/aaaa.
+func (t Task) CreatedDateLabel() string {
+	return t.CreatedAt.Format("02/01/2006")
+}
+
+// CreatedDateISO devuelve la fecha de creación en formato aaaa-mm-dd, válido
+// para el atributo datetime de <time>.
+func (t Task) CreatedDateISO() string {
+	return t.CreatedAt.Format("2006-01-02")
+}

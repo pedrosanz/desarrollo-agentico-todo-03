@@ -30,6 +30,7 @@
             </button>
           </form>
           <span class="task-title"><%= t.Title %></span>
+          <time class="task-created" datetime="<%= t.CreatedDateISO() %>">Creada el <%= t.CreatedDateLabel() %></time>
           <span class="task-priority task-priority-<%= t.Priority %>"><span class="sr-only">Prioridad </span><%= t.PriorityLabel() %></span>
           <%= if (t.Completed) { %>
             <span class="task-status">Completada</span>

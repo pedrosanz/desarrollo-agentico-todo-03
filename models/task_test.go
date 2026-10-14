@@ -1,6 +1,9 @@
 package models
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 func (ms *ModelSuite) Test_Task_Create_Valid() {
 	task := &Task{Title: "Comprar café"}
@@ -111,4 +114,11 @@ func (ms *ModelSuite) Test_Task_PriorityLabel() {
 	ms.Equal("Alta", Task{Priority: PriorityHigh}.PriorityLabel())
 	ms.Equal("Media", Task{Priority: PriorityMedium}.PriorityLabel())
 	ms.Equal("Baja", Task{Priority: PriorityLow}.PriorityLabel())
+}
+
+func (ms *ModelSuite) Test_Task_CreatedDateLabels() {
+	task := Task{CreatedAt: time.Date(2026, time.March, 5, 10, 30, 0, 0, time.UTC)}
+
+	ms.Equal("05/03/2026", task.CreatedDateLabel())
+	ms.Equal("2026-03-05", task.CreatedDateISO())
 }
